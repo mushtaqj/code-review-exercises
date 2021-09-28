@@ -1,42 +1,60 @@
 package lk.mustaqj.codereviews.refactorydayofyear;
 
+import static com.google.common.base.Preconditions.checkArgument;
+
 import java.util.stream.IntStream;
 
 public class RefactorDayOfYear
 {
+
   private static final int THIRTY_ONE_DAYS = 31;
   private static final int THIRTY_DAYS = 30;
   private static final int TWENTY_EIGHT_DAYS = 28;
-  private static final int FEBRUARY = 2;
 
-  public static int dayOfYear (final int month, final int dayOfMonth, final int year)
+  /**
+   * @param month      {@link Month}
+   * @param dayOfMonth should be between 1 and 31 or 30 depending on the month
+   * @param year       should be the full year, giving 20 would assume the year is the year 20 AD not 20202
+   * @return calculated day of the year adding/removing a day based on the leap year
+   */
+  public static int dayOfYear (final Month month, final int dayOfMonth, final int year)
   {
-    // TODO - Add validation for max days for month
-    // TODO - Add validation for min days for month
-    // TODO - Month min max validation
-    // TODO - Year min validation
-    // TODO - Leap year validation
+    final int maxDaysForMonth = getMaxDaysForMonth(month, year);
 
-    final boolean isLeapYear = year % 4 == 0;
+    checkArgument(dayOfMonth > 0, "dayOfMonth");
+    checkArgument(year > 0, "year");
+    checkArgument(dayOfMonth <= THIRTY_ONE_DAYS, "dayOfMonth");
+    checkArgument(dayOfMonth >= maxDaysForMonth,
+                  String.format("dayOfMonth for month %s should be not be greater than %d", month, maxDaysForMonth));
 
-    final int lastCompletedMonthSum = IntStream.range(1, month).map(monthIdx -> {
+    final int lastCompletedMonthSum = IntStream.range(Month.JAN.getIndex(), month.getIndex()).map(monthIdx -> {
 
-      final boolean isEvenMonth = monthIdx % 2 == 0;
-
-      if (monthIdx == FEBRUARY)
-      {
-        return isLeapYear ? TWENTY_EIGHT_DAYS + 1 : TWENTY_EIGHT_DAYS;
-      }
-
-      if (monthIdx < 8)
-      {
-        return isEvenMonth ? THIRTY_DAYS : THIRTY_ONE_DAYS;
-      }
-
-      return isEvenMonth ? THIRTY_ONE_DAYS : THIRTY_DAYS;
+      return getMaxDaysForMonth(Month.of(monthIdx), year);
     }).reduce(0, Integer::sum);
 
     return lastCompletedMonthSum + dayOfMonth;
+  }
+
+  private static int getMaxDaysForMonth (Month month, int year)
+  {
+    final boolean isLeapYear = year % 4 == 0;
+    final boolean isEvenMonth = month.getIndex() % 2 == 0;
+    final int daysForMonth;
+
+    if (month == Month.FEB)
+    {
+      daysForMonth = isLeapYear ? TWENTY_EIGHT_DAYS + 1 : TWENTY_EIGHT_DAYS;
+    }
+    else if (month.getIndex() < Month.AUG.getIndex())
+    {
+      daysForMonth = isEvenMonth ? THIRTY_DAYS : THIRTY_ONE_DAYS;
+    }
+    else
+    {
+      daysForMonth = isEvenMonth ? THIRTY_ONE_DAYS : THIRTY_DAYS;
+    }
+
+    return daysForMonth;
   }
 
   public static int dayOfYearLegacy (int month, int dayOfMonth, int year)
